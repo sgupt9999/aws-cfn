@@ -1,0 +1,30 @@
+# Test template to test how creation policies work
+
+Description: test template for creation policy
+
+Parameters:
+ Key:
+  Type: AWS::EC2::KeyPair::KeyName
+
+Resources:
+ EC2:
+  Type: AWS::EC2::Instance
+  CreationPolicy:
+   ResourceSignal:
+    Count: 1
+    Timeout: PT60M
+  Properties:
+   ImageId: ami-032509850cf9ee54e
+   InstanceType: t2.micro
+   KeyName: !Ref Key
+   UserData:
+    Fn::Base64:
+     !Sub |
+      #!/bin/bash
+      yum update -y
+      yum install httpd -y
+      echo "Hello World" >> /var/www/html/index.html
+      systemctl enable --now httpd
+      wget http://repos.dfw.quadranet.com/centos/7.6.1810/isos/x86_64/CentOS-7-x86_64-Minimal-1810.iso
+      /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource EC2 --region ${AWS::Region}
+
